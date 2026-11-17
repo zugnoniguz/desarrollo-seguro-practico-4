@@ -77,7 +77,8 @@ comerciales presenta varias limitaciones.
 
 Para ejecutar las reglas, se ejecutó el comando `semgrep scan`, sin ninguna
 configuración, en cada proyecto. Esto ejecuta las reglas de la CE que incluye
-por defecto.
+por defecto. Los resultados se leyeron de la terminal directamente, sin
+exportarlos a archivos externos.
 
 Nótese que en el análisis la única vulnerabilidad que se asume que existe es la
 que está definida que existe en la letra del ejercicio. Para el análisis con
@@ -93,6 +94,10 @@ aplicación.
 ### Rama `main`
 
 #### Hallazgo 1
+
+```
+dockerfile.security.missing-user.missing-user
+```
 
 ```dockerfile
 # ...
@@ -130,6 +135,10 @@ remediada, y por ende que no ocurra en el análisis es un verdadero negativo.
 
 #### Hallazgo 1
 
+```
+dockerfile.security.missing-user.missing-user
+```
+
 ```dockerfile
 CMD ["sh", "-c", "python init_db.py && python app.py"]
 ```
@@ -163,6 +172,10 @@ remediada, y por ende que no ocurra en el análisis es un verdadero negativo.
 
 #### Hallazgo 1
 
+```
+dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
+```
+
 ```dockerfile
 ENTRYPOINT ["java", \
     "-jar", "app.jar", \
@@ -184,6 +197,10 @@ Como en el ejercicio 1 y 2, esto es un verdadero positivo.
 
 #### Hallazgo 2
 
+```
+python.django.security.django-no-csrf-token.django-no-csrf-token
+```
+
 ```html
 <form method="post"
       th:action="@{/upload/{id}(id=${pelicula.id})}"
@@ -201,7 +218,14 @@ prevent CSRF attacks.
 Details: https://sg.run/N0Bp
 ```
 
-TODO: Fill in this is a false positive
+Este hallazgo es un falso positivo, ya que esta vulnerabilidad, como indica
+su nombre aplica a aplicaciones escritas en Python y Django, lo cual no es el
+caso de esta aplicación en Spring Boot y Java.
+
+Más allá de eso, tampoco aplica en este caso, ya que el formulario no incluye
+autenticación, entonces no existe vulnerabilidad CSRF. Esto también podría
+ser considerado vulnerabilidad, y sería un falso negativo, pero no será
+contemplado.
 
 #### Falsos negativos
 
@@ -210,3 +234,82 @@ el path traversal y la posible inclusión de archivos que no sean imágenes en e
 servidor.
 
 ### Rama `practico-2`
+
+Se mantienen las mismas detecciones de la rama `main`, y por ende se mantiene
+su estado como verdadero positivo y falso positivo respectivamente.
+
+En cambio, la vulnerabilidad que era un falso negativo sí fue remediada, y por
+ende pasa a ser un verdadero negativo.
+
+## Ejercicio 4
+
+### Rama `main`
+
+#### Hallazgo 1
+
+```
+dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
+```
+
+```dockerfile
+ENTRYPOINT ["java", \
+   "-jar", "app.jar", \
+   "--spring.sql.init.mode=always", \
+   "--spring.datasource.url=jdbc:h2:file:/data/cine3;AUTO_SERVER=TRUE", \
+   "--spring.jpa.hibernate.ddl-auto=update", \
+   "--app.upload-dir=/uploads", "--debug"]
+```
+
+```
+By not specifying a USER, a program in the container may run as 'root'.
+This is a security hazard. If an attacker can control a process running
+as root, they may have control over the container. Ensure that the last
+USER in a Dockerfile is a USER other than 'root'.
+Details: https://sg.run/k281
+```
+
+Por la misma razón que anteriores, es un verdadero positivo.
+
+#### Hallazgo 2
+
+```
+java.spring.security.audit.spel-injection.spel-injection
+```
+
+```java
+public String evaluate(String expression) {
+   if (expression == null || expression.isBlank()) {
+       return "";
+   }
+
+   ExpressionParser parser = new SpelExpressionParser();
+
+   org.springframework.expression.EvaluationContext context =
+    SimpleEvaluationContext.forReadOnlyDataBinding().build();
+```
+
+```
+A Spring expression is built with a dynamic value. The source of the
+value(s) should be verified to avoid that unfiltered values fall into
+this risky code evaluation.
+```
+
+Esto es un verdadero positivo. Es la vulnerabilidad a remediar de este
+ejercicio, y el proceso de explotación fue detallado en el práctico 2.
+
+#### Falsos negativos
+
+No se identificaron falsos negativos en este análisis
+
+### Rama `practico-2`
+
+El hallazgo 1 se mantuvo, y sigue siendo válido. En cambio, el segundo hallazgo
+sigue siendo reportado, pese a que se haya remediado la vulnerabilidad. Esto
+se debe a que el código que genera la vulnerabilidad sigue estando en el repositorio,
+pese a que nunca sea utilizado por la aplicación.
+
+Esto implicaría que es un falso positivo, pero igualmente es importante que la
+herramienta reporte código inseguro, pese a que este nunca sea utilizado en la
+aplicación, ya que la clase podría ser utilizada en el futuro si el
+desarrollador no es cuidadoso.
+
