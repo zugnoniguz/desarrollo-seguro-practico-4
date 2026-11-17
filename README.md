@@ -51,8 +51,9 @@ comerciales presenta varias limitaciones.
   reglas avanzadas mantenidas por Semgrep, con menor tasa de falsos positivos.
   Además se ofrece un acceso más amplio al repositorio de Semgrep.
 
-- La CE soporta los 30+ lenguajes estándar; las versiones comerciales agregan
-  soporte para lenguajes como Apex (Salesforce). TODO: Add something else?
+- La CE soporta los 30+ lenguajes estándar, y las versiones comerciales agregan
+  soporte para lenguajes "enterprise" habilitados con `--pro-languages`
+  (actualmente Apex, C# y Elixir).
 
 - La CE es solo CLI, con resultados en la terminal o exportados como JSON. Las
   versiones comerciales incluyen dashboard web, reportes, gestión de políticas y
