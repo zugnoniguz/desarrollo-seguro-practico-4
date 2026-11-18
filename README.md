@@ -305,12 +305,111 @@ No se identificaron falsos negativos en este análisis
 ### Rama `practico-2`
 
 El hallazgo 1 se mantuvo, y sigue siendo válido. En cambio, el segundo hallazgo
-sigue siendo reportado, pese a que se haya remediado la vulnerabilidad. Esto
-se debe a que el código que genera la vulnerabilidad sigue estando en el repositorio,
-pese a que nunca sea utilizado por la aplicación.
+sigue siendo reportado, pese a que se haya remediado la vulnerabilidad. Esto se
+debe a que el código que genera la vulnerabilidad sigue estando en el
+repositorio, pese a que nunca sea utilizado por la aplicación.
 
 Esto implicaría que es un falso positivo, pero igualmente es importante que la
 herramienta reporte código inseguro, pese a que este nunca sea utilizado en la
 aplicación, ya que la clase podría ser utilizada en el futuro si el
 desarrollador no es cuidadoso.
 
+## Ejercicio 5
+
+### Rama `main`
+
+#### Hallazgo 1
+
+```
+dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
+```
+
+```dockerfile
+ENTRYPOINT ["java", \
+   "-jar", "app.jar", \
+   "--spring.sql.init.mode=always", \
+   "--spring.datasource.url=jdbc:h2:file:/data/cine3;AUTO_SERVER=TRUE", \
+   "--spring.jpa.hibernate.ddl-auto=update", \
+   "--app.upload-dir=/uploads", "--debug"]
+```
+
+```
+By not specifying a USER, a program in the container may run as 'root'.
+This is a security hazard. If an attacker can control a process running
+as root, they may have control over the container. Ensure that the last
+USER in a Dockerfile is a USER other than 'root'.
+Details: https://sg.run/k281
+```
+
+Como los ejercicios anteriores, esto es un verdadero positivo.
+
+#### Hallazgo 2
+
+```
+java.lang.security.audit.crypto.use-of-aes-ecb.use-of-aes-ecb
+```
+
+```java
+private static final String CIPHER_ALGO = "AES/ECB/PKCS5Padding";
+Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+```
+
+```
+Use of AES with ECB mode detected. ECB doesn't provide message
+confidentiality and  is not semantically secure so should not be used.
+Instead, use a strong, secure cipher:
+Cipher.getInstance("AES/CBC/PKCS7PADDING"). See https://owasp.org/www-
+community/Using_the_Java_Cryptographic_Extensions for more information.
+Details: https://sg.run/dB2Y
+```
+
+Esto es técnicamente un verdadero positivo, ya que es cierto que al utilizar
+AES, no se debe utilizar `ECB` para encripción.
+
+#### Hallazgo 3
+
+```
+python.django.security.django-no-csrf-token.django-no-csrf-token
+```
+
+```html
+<form th:action="@{/login}" method="post">
+   <label>Usuario</label>
+   <input type="text" name="username" placeholder="nombre de usuario" required>
+   <label>Contrase&#241;a</label>
+   <input type="password" name="password" placeholder="tu contrase&#241;a" required>
+   <button type="submit">Entrar</button>
+</form>
+
+<form th:action="@{/register}" method="post">
+   <label>Usuario</label>
+   <input type="text" name="username" placeholder="elige un usuario" required>
+   <label>Contrase&#241;a</label>
+   <input type="password" name="password" placeholder="elige una contrase&#241;a" required>
+   <label>Confirmar Contrase&#241;a</label>
+   <input type="password" name="confirmPwd" placeholder="repite la contrase&#241;a" required>
+   <button type="submit">Registrarse</button>
+</form>
+```
+
+```
+Manually-created forms in django templates should specify a csrf_token to
+prevent CSRF attacks.
+Details: https://sg.run/N0Bp
+```
+
+Aplica la misma lógica que en el ejercicio anterior, ya que esta aplicación
+también utiliza Spring Boot.
+
+#### Falsos negativos
+
+No se identifica la vulnerabilidad de utilizar encripción y no hashing para
+procesar la contraseña.
+
+### Rama `practico-2`
+
+Se produce el mismo análisis, y las evaluaciones realizadas en la sección
+anterior siguen aplicando para el análisis de semgrep en esta rama.
+
+La única diferencia es con el falso negativo, que en esta rama es un verdadero
+negativo ya que la vulnerabilidad es remediada.
