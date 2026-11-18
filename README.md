@@ -10,10 +10,10 @@ código.
 Primero se determina el lenguaje utilizado para el proyecto recorriendo los
 archivos del mismo a través del FS o git, para así determinar qué reglas
 aplicar. Una vez se determina qué lenguajes se utilizan, se aplican una serie
-de reglas predefinidas que corresponden con código mal-escrito o inseguro en
+de reglas predefinidas que corresponden con código mal escrito o inseguro en
 los lenguajes encontrados.
 
-Estas reglas son definidas como patrones de cadenas, es decir, se escribe el
+Estas reglas son definidas como patrones de código, es decir, se escribe el
 código no deseado en el lenguaje que se va a analizar. Luego Semgrep convierte
 la estructura del programa y las reglas en sus ASTs correspondientes y verifica
 la correspondencia utilizando estos, y no simplemente el código fuente
@@ -27,10 +27,10 @@ repositorio de reglas que el usuario puede descargar, pero el usuario también
 puede definir las reglas que desee o utilizar otras, según las necesidades del
 análisis a realizar.
 
-Finalmente, una vez aplicadas todas las reglas, el programa reune las reglas que
+Finalmente, una vez aplicadas todas las reglas, el programa reúne las reglas que
 fallaron y los fragmentos de código relevantes y recopila un reporte para luego
 ser procesado. El mismo puede ser visto de manera visual, en la terminal, o
-exportado en algún formato estructurado como JSON para ser procesados por otra
+exportado en algún formato estructurado como JSON para ser procesado por otra
 herramienta.
 
 ## Limitaciones de la Community Edition
@@ -38,7 +38,7 @@ herramienta.
 Semgrep CE es la versión gratuita del producto, que respecto a las versiones
 comerciales presenta varias limitaciones.
 
-- El análisis es limitado a un solo archivo. No contempla el flujo de datos
+- El análisis está limitado a un solo archivo. No contempla el flujo de datos
   para reglas que puedan involucrar varios archivos.
 
 - En la CE las reglas de taint (manchado de variables) solo siguen el flujo
@@ -82,8 +82,8 @@ por defecto. Los resultados se leyeron de la terminal directamente, sin
 exportarlos a archivos externos.
 
 Nótese que en el análisis la única vulnerabilidad que se asume que existe es la
-que está definida que existe en la letra del ejercicio. Para el análisis con
-semgrep no se contempló la existencia de otras vulnerabilidades fuera de las
+que está definida en la letra del ejercicio. Para el análisis con
+Semgrep no se contempló la existencia de otras vulnerabilidades fuera de las
 que la herramienta destaque.
 
 También se ignoraron vulnerabilidades resaltadas en los archivos de test
@@ -119,12 +119,12 @@ positivo.
 
 #### Falsos negativos
 
-La inyección SQL en la aplicación, que es evidente y en lo que consitía el
+La inyección SQL en la aplicación, que es evidente y en lo que consistía el
 ejercicio, no fue detectada.
 
 ### Rama `practico-2`
 
-Se mantienten las mismas detecciones que en la rama `main`, y por ende estas
+Se mantienen las mismas detecciones que en la rama `main`, y por ende estas
 siguen siendo verdaderos positivos.
 
 La única diferencia es que ahora la vulnerabilidad de inyección SQL fue
@@ -156,15 +156,15 @@ Al igual que en el ejercicio 1, esto es un verdadero positivo.
 
 #### Falsos negativos
 
-La vulnerabilidad del ejercicio, el xss en el template de la aplicación, no es
+La vulnerabilidad del ejercicio, el XSS en el template de la aplicación, no es
 detectado.
 
 ### Rama `practico-2`
 
-Se mantienten las mismas detecciones que en la rama `main`, y por ende estas
+Se mantienen las mismas detecciones que en la rama `main`, y por ende estas
 siguen siendo verdaderos positivos.
 
-La única diferencia es que ahora la vulnerabilidad de xss fue
+La única diferencia es que ahora la vulnerabilidad de XSS fue
 remediada, y por ende que no ocurra en el análisis es un verdadero negativo.
 
 ## Ejercicio 3
@@ -194,7 +194,7 @@ USER in a Dockerfile is a USER other than 'root'.
 Details: https://sg.run/k281
 ```
 
-Como en el ejercicio 1 y 2, esto es un verdadero positivo.
+Como en los ejercicios 1 y 2, esto es un verdadero positivo.
 
 #### Hallazgo 2
 
@@ -220,12 +220,12 @@ Details: https://sg.run/N0Bp
 ```
 
 Este hallazgo es un falso positivo, ya que esta vulnerabilidad, como indica
-su nombre aplica a aplicaciones escritas en Python y Django, lo cual no es el
+su nombre, aplica a aplicaciones escritas en Python y Django, lo cual no es el
 caso de esta aplicación en Spring Boot y Java.
 
 Más allá de eso, tampoco aplica en este caso, ya que el formulario no incluye
 autenticación, entonces no existe vulnerabilidad CSRF. Esto también podría
-ser considerado vulnerabilidad, y sería un falso negativo, pero no será
+ser considerado una vulnerabilidad, y sería un falso negativo, pero no será
 contemplado.
 
 #### Falsos negativos
@@ -269,7 +269,7 @@ USER in a Dockerfile is a USER other than 'root'.
 Details: https://sg.run/k281
 ```
 
-Por la misma razón que anteriores, es un verdadero positivo.
+Por la misma razón que en los casos anteriores, es un verdadero positivo.
 
 #### Hallazgo 2
 
@@ -300,8 +300,7 @@ ejercicio, y el proceso de explotación fue detallado en el práctico 2.
 
 #### Falsos negativos
 
-No se identificaron falsos negativos en este análisis
-
+No se identificaron falsos negativos en este análisis.
 ### Rama `practico-2`
 
 El hallazgo 1 se mantuvo, y sigue siendo válido. En cambio, el segundo hallazgo
@@ -341,7 +340,7 @@ USER in a Dockerfile is a USER other than 'root'.
 Details: https://sg.run/k281
 ```
 
-Como los ejercicios anteriores, esto es un verdadero positivo.
+Como en los ejercicios anteriores, esto es un verdadero positivo.
 
 #### Hallazgo 2
 
@@ -409,17 +408,17 @@ procesar la contraseña.
 ### Rama `practico-2`
 
 Se produce el mismo análisis, y las evaluaciones realizadas en la sección
-anterior siguen aplicando para el análisis de semgrep en esta rama.
+anterior siguen aplicando para el análisis de Semgrep en esta rama.
 
 La única diferencia es con el falso negativo, que en esta rama es un verdadero
 negativo ya que la vulnerabilidad es remediada.
 
 # Análisis con LLMs
 
-Para este análisis, se corrió el prompt con `GLM-5.3-Flash Free` en el nivel de
+Para este análisis, se ejecutó el prompt con `GLM-5.3-Flash Free` en el nivel de
 esfuerzo `high` en el harness `opencode`. Para cada ejercicio, se utilizó el
-siguiente prompt y se inició el prompt desde el directorio del ejercicio, una
-vez para cada rama.
+siguiente prompt y se inició el análisis desde el directorio del ejercicio, una
+vez por cada rama.
 
 ```
 Perform a security audit of the codebase within this directory. Analyse only
@@ -427,8 +426,8 @@ the code within this directory, and assume this is a production codebase that
 serves traffic to users.
 
 Report findings individually. Each finding should contain a short heading
-describing what categoy this vulnerability falls within (SQL injection, XSS,
-Directoy Travsel, etc), a short snippet of the vulnerable code and an
+describing what category this vulnerability falls within (SQL injection, XSS,
+Directory Traversal, etc), a short snippet of the vulnerable code and an
 explanation as to what the vulnerability is below. There should be nothing
 other than what is mentioned here, neither recommended fixes nor further
 analysis.
@@ -443,31 +442,31 @@ entrenamiento, por lo que las instrucciones se siguen con más fidelidad y el
 vocabulario técnico de seguridad (CWE, OWASP, nombres de vulnerabilidades) es
 nativo del inglés, reduciendo errores terminológicos.
 
-El análisis producido por cada LLMs es adjunto en [LLM.md].
+El análisis producido por los LLMs está adjunto en [LLM.md](LLM.md).
 
 ## Comparación
 
 El análisis con Semgrep identifica muchas menos vulnerabilidades. Esto se debe
 a dos cosas: primero, que se usa Semgrep CE y entonces el conjunto de reglas es
 acotado, y no se utiliza análisis de taint profundo. Luego, las LLMs pueden
-realizar un análisis más profundo del código, ya que puede conseguir contexto
+realizar un análisis más profundo del código, ya que pueden conseguir contexto
 del problema, e inferir más sobre las funciones que el análisis estático.
 
 En el caso particular de los ejercicios, el LLM identifica la vulnerabilidad en
 la rama `main`, mientras que Semgrep solo lo hace para el ejercicio 4. Esto
-principalmente se debe a que para encontras estas vulnerabilidades, se
+principalmente se debe a que para encontrar estas vulnerabilidades, se
 necesitaba un análisis de flujo de datos más profundo que el ofrecido por
 Semgrep CE.
 
 Además de estas, también encontró otras vulnerabilidades de configuración,
-que es más improbable que detecte Semgrep debido a la naturaleza de su análisis.
+que es menos probable que Semgrep detecte debido a la naturaleza de su análisis.
 
 En la rama `practico-2` ambas herramientas dejan de reportar las
 vulnerabilidades remediadas y mantienen las restantes.
 
 Se debe notar que el análisis de las mismas vulnerabilidades en las ramas
 difiere entre ambas ejecuciones del mismo prompt, cosa que no sucedió para
-semgrep. Aún si se solicitase en el prompt que el resultado sea un formato
+Semgrep. Aun si se solicitase en el prompt que el resultado tenga un formato
 estructurado, no podría producir el mismo resultado consistentemente. En las
 ejecuciones realizadas para este informe no sucedió, pero podría suceder que
 una vulnerabilidad no se encuentre en una ejecución, pero sí se encuentra en
@@ -476,7 +475,7 @@ Semgrep.
 
 En conclusión, son enfoques complementarios. Semgrep falló en encontrar
 vulnerabilidades debido a que no tenía análisis de flujo de datos, pero en el
-caso general se utilizarían ambos ḿetodos para generar mayor cobertura. Semgrep
+caso general se utilizarían ambos métodos para generar mayor cobertura. Semgrep
 aporta determinismo, costo casi nulo y automatización en CI, mientras que el
 LLM demostró cobertura superior al precio de no ser reproducible ni auditable,
 y con un mayor costo. Con el análisis tradicional se puede generar un flujo
