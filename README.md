@@ -437,7 +437,49 @@ Output the findings in a file called `ANALYSIS.md` in the root of the project,
 including only the vulnerabilities found.
 ```
 
-TODO: Justify why english and not spanish
+El prompt y los análisis del LLM están en inglés porque asumo que el análisis
+generado será mejor así. Esto porque es mucho más frecuente en los datos de
+entrenamiento, por lo que las instrucciones se siguen con más fidelidad y el
+vocabulario técnico de seguridad (CWE, OWASP, nombres de vulnerabilidades) es
+nativo del inglés, reduciendo errores terminológicos.
 
 El análisis producido por cada LLMs es adjunto en [LLM.md].
+
+## Comparación
+
+El análisis con Semgrep identifica muchas menos vulnerabilidades. Esto se debe
+a dos cosas: primero, que se usa Semgrep CE y entonces el conjunto de reglas es
+acotado, y no se utiliza análisis de taint profundo. Luego, las LLMs pueden
+realizar un análisis más profundo del código, ya que puede conseguir contexto
+del problema, e inferir más sobre las funciones que el análisis estático.
+
+En el caso particular de los ejercicios, el LLM identifica la vulnerabilidad en
+la rama `main`, mientras que Semgrep solo lo hace para el ejercicio 4. Esto
+principalmente se debe a que para encontras estas vulnerabilidades, se
+necesitaba un análisis de flujo de datos más profundo que el ofrecido por
+Semgrep CE.
+
+Además de estas, también encontró otras vulnerabilidades de configuración,
+que es más improbable que detecte Semgrep debido a la naturaleza de su análisis.
+
+En la rama `practico-2` ambas herramientas dejan de reportar las
+vulnerabilidades remediadas y mantienen las restantes.
+
+Se debe notar que el análisis de las mismas vulnerabilidades en las ramas
+difiere entre ambas ejecuciones del mismo prompt, cosa que no sucedió para
+semgrep. Aún si se solicitase en el prompt que el resultado sea un formato
+estructurado, no podría producir el mismo resultado consistentemente. En las
+ejecuciones realizadas para este informe no sucedió, pero podría suceder que
+una vulnerabilidad no se encuentre en una ejecución, pero sí se encuentra en
+otra, cosa que es posible con un LLM pero no herramientas deterministas como
+Semgrep.
+
+En conclusión, son enfoques complementarios. Semgrep falló en encontrar
+vulnerabilidades debido a que no tenía análisis de flujo de datos, pero en el
+caso general se utilizarían ambos ḿetodos para generar mayor cobertura. Semgrep
+aporta determinismo, costo casi nulo y automatización en CI, mientras que el
+LLM demostró cobertura superior al precio de no ser reproducible ni auditable,
+y con un mayor costo. Con el análisis tradicional se puede generar un flujo
+automatizable para auditar, y el LLM lo complementa como una herramienta que
+puede utilizar el desarrollador para revisar el código más profundamente.
 
