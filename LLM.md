@@ -477,95 +477,87 @@ gets full unauthenticated access.
 
 ### Rama `practico-2`
 
-#### SQL Injection (search parameter)
+#### Path Traversal / Arbitrary File Read
 
-```python
-sql = (
-    f"SELECT peliculas.nombre as pelicula, funciones.fecha_hora, "
+```java
+@GetMapping("/uploads/{filename:.+}")
+@ResponseBody
+public ResponseEntity<Resource> serveFile(@PathVariable String filename) throws IOException {
+    Path filePath = Paths.get(uploadDir).resolve(filename).normalize();
+    Resource resource = new UrlResource(filePath.toUri());
     ...
-    f"WHERE peliculas.nombre LIKE '%{query}%' "
+}
+```
+
+The `serveFile` endpoint takes a user-controlled path variable and resolves it directly
+against the upload directory. The `{filename:.+}` pattern captures path segments
+including `/`, so a request such as `/uploads/../../data/cine3.mv.db` or
+`/uploads//etc/passwd` (an absolute path wins on `resolve()`) escapes the upload
+directory. `normalize()` collapses the `..` sequences but there is no
+`startsWith(uploadDir)` containment check afterwards, so the endpoint serves any file
+on the filesystem readable by the application process — including the H2 database
+file itself (`/data/cine3.mv.db`) and system files. Note that the *write* path was
+hardened (the uploaded file is stored under the movie ID), but the *read* path was not.
+
+#### Stored XSS via Insufficient Upload Validation (Content-Type Validation Bypass)
+
+```java
+public static boolean isPng(InputStream is) throws IOException {
+    byte[] header = new byte[PNG_SIGNATURE.length];
+    int read = is.read(header);
+    if (read != PNG_SIGNATURE.length) {
+        return false;
+    }
+    return Arrays.equals(header, PNG_SIGNATURE);
+}
+```
+
+```java
+if (!PngValidator.isPng(archivo.getInputStream())) {
+    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Solo se permiten archivos PNG");
+}
+String newFilename = "" + id;
+Files.copy(archivo.getInputStream(), uploadPath.resolve(newFilename), ...);
+```
+
+The upload validation only compares the first 8 bytes of the file against the PNG
+magic number. An attacker can upload a polyglot file that begins with a valid PNG
+signature and contains arbitrary attacker-controlled HTML/JavaScript afterwards
+(the remainder of the content is never validated). The stored file has no extension,
+so `serveFile` delivers it as `application/octet-stream` with
+`Content-Disposition: inline`, and the application sets no `X-Content-Type-Options:
+nosniff` header or Content Security Policy. A browser navigated directly to
+`/uploads/{id}` will MIME-sniff the body and render the embedded HTML/JavaScript in
+the application's origin, giving stored XSS.
+
+#### Broken Access Control (Unauthenticated File Upload)
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+
+```java
+@PostMapping("/upload/{id}")
+public String uploadFile(@PathVariable Integer id,
+                         @RequestParam("afiche") MultipartFile archivo) throws IOException {
     ...
-)
-return db.execute(sql).fetchall()
-```
-
-The `query` value, taken directly from the user-controlled `buscar` request
-parameter in the `index` route, is interpolated into the SQL statement with an
-f-string instead of being passed as a bound parameter. An attacker can break
-out of the `LIKE '%...%'` literal and inject arbitrary SQL (e.g. via `UNION
-SELECT`) into the query executed against the SQLite database, allowing
-extraction or manipulation of data from the `peliculas` and `funciones`
-tables.
-
-#### SQL Injection (ORDER BY direction)
-
-```python
-sort_dir = request.args.get('sentido', 'ASC')
-...
-f"ORDER BY {'peliculas.nombre' if sort_by == 'nombre' else 'funciones.fecha_hora'} "
-f"{sort_dir}"
-```
-
-The `sort_dir` value comes from the user-controlled `sentido` request
-parameter and is concatenated verbatim into the `ORDER BY` clause of the SQL
-statement. While `sort_by` is restricted to a fixed set of column names,
-`sort_dir` accepts any value, so an attacker can inject arbitrary SQL
-expressions after the column name, injecting malicious SQL into the query.
-
-#### Cross-Site Request Forgery (CSRF)
-
-```python
-@app.route('/edit/<int:pelicula_id>', methods=['POST'])
-def edit_post(pelicula_id):
-    nombre = request.form.get('nombre', '')
+    Files.copy(archivo.getInputStream(), uploadPath.resolve(newFilename), StandardCopyOption.REPLACE_EXISTING);
+    pelicula.setAfichePath(newFilename);
+    peliculaRepo.save(pelicula);
     ...
-    db.execute(
-        '''UPDATE peliculas
-           SET nombre=?, genero=?, director=?, descripcion=?
-           WHERE id=?''',
-        (nombre, genero, director, descripcion, pelicula_id),
-    )
-    db.commit()
+}
 ```
 
-The state-changing `POST /edit/<id>` endpoint performs a database update with
-no CSRF token or any other origin-validation mechanism, and the form in
-`templates/edit.html` submits to it without any anti-CSRF protection. An
-attacker can craft a page that, when visited by a victim, silently submits a
-forged POST request and modifies or overwrites movie records in the database.
-
-#### Missing Authentication / Broken Access Control
-
-```python
-@app.route('/edit/<int:pelicula_id>', methods=['GET'])
-def edit_get(pelicula_id):
-    db = get_db()
-    pelicula = db.execute(
-        'SELECT * FROM peliculas WHERE id = ?', (pelicula_id,)
-    ).fetchone()
-    return render_template('edit.html', pelicula=pelicula)
-```
-
-Neither the `GET` nor the `POST` handler for `/edit/<id>` performs any
-authentication or authorization check; every "Editar" link on the public
-index page exposes the editing functionality. Any anonymous user can access
-the edit form and modify the name, genre, director, and description of any
-movie in the production database.
-
-#### Debug Mode Enabled in Production
-
-```python
-debug = os.environ.get('DEBUG_MODE', 'true').lower() in ('true', '1', 'yes')
-app.run(debug=debug, host=host)
-```
-
-Debug mode is enabled by default: unless the `DEBUG_MODE` environment
-variable is explicitly set to a falsy value, the application runs with
-`debug=True`, and the Docker deployment (`docker-compose.yml`) sets no such
-variable. The Werkzeug interactive debugger is therefore exposed on the
-publicly bound interface (`0.0.0.0:5000`), allowing any attacker who triggers
-an unhandled exception to execute arbitrary code on the server through the
-debugger console.
+The application includes no security dependency or configuration of any kind (no
+Spring Security, no filter chain, no authentication or authorization checks). The
+`POST /upload/{id}` endpoint is therefore fully anonymous: any visitor, without
+credentials, can overwrite the poster of any movie, and the `GET /uploads/{filename}`
+endpoint likewise exposes stored files to anyone. There is also no CSRF protection,
+so a cross-site forged request from a victim's browser can perform uploads on their
+behalf.
 
 ## Ejercicio 4
 
